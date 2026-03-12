@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Сюрприз — Suntago 🌊</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Nunito', sans-serif;
+      background: #000;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .feed {
+      height: 100vh;
+      height: 100dvh;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .feed::-webkit-scrollbar {
+      display: none;
+    }
+
+    .slide {
+      height: 100vh;
+      height: 100dvh;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* --- VIDEO SLIDES --- */
+    .slide-video {
+      background: #000;
+    }
+
+    .slide-video video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .video-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(0,0,0,0.15) 0%,
+        transparent 20%,
+        transparent 70%,
+        rgba(0,0,0,0.4) 100%
+      );
+      pointer-events: none;
+    }
+
+    .video-caption {
+      position: absolute;
+      bottom: 80px;
+      left: 20px;
+      right: 70px;
+      color: #fff;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .video-caption h2 {
+      font-size: 18px;
+      font-weight: 800;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      margin-bottom: 6px;
+    }
+
+    .video-caption p {
+      font-size: 14px;
+      font-weight: 600;
+      opacity: 0.85;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+
+    /* --- SCROLL INDICATOR --- */
+    .scroll-hint {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      z-index: 10;
+      animation: fadeInHint 1s ease 1.5s both;
+      pointer-events: none;
+    }
+
+    .scroll-hint span {
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    }
+
+    .scroll-hint .arrows {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: bounceArrows 1.5s ease-in-out infinite;
+    }
+
+    .scroll-hint .arrows svg {
+      width: 28px;
+      height: 28px;
+      fill: none;
+      stroke: #fff;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5));
+    }
+
+    .scroll-hint .arrows svg:last-child {
+      margin-top: -14px;
+      opacity: 0.5;
+    }
+
+    @keyframes bounceArrows {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(10px); }
+    }
+
+    @keyframes fadeInHint {
+      from { opacity: 0; transform: translateX(-50%) translateY(15px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    .scroll-hint.hidden {
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    /* --- SIDE ACTIONS (TikTok style) --- */
+    .side-actions {
+      position: absolute;
+      right: 12px;
+      bottom: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 22px;
+      z-index: 5;
+    }
+
+    .side-action {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .side-action .icon-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .side-action .icon-circle svg {
+      width: 22px;
+      height: 22px;
+      fill: #fff;
+    }
+
+    .side-action .icon-circle.liked {
+      background: #ff2d55;
+      transform: scale(1.15);
+    }
+
+    .side-action span {
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+
+    /* --- PROGRESS DOTS --- */
+    .progress-dots {
+      position: fixed;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 100;
+    }
+
+    .progress-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      transition: all 0.3s ease;
+    }
+
+    .progress-dot.active {
+      background: #fff;
+      height: 20px;
+      border-radius: 3px;
+    }
+
+    /* --- INVITATION SLIDE --- */
+    .slide-invite {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 60%, #f5576c 100%);
+      background-size: 300% 300%;
+      animation: gradientShift 8s ease infinite;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 24px;
+      padding-top: calc(30px + var(--safe-top));
+      padding-bottom: calc(30px + var(--safe-bottom));
+      text-align: center;
+      position: relative;
+    }
+
+    @keyframes gradientShift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .invite-bubbles {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      animation: floatBubble linear infinite;
+    }
+
+    @keyframes floatBubble {
+      0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { transform: translateY(-100px) scale(1); opacity: 0; }
+    }
+
+    .invite-card {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    .invite-emoji-top {
+      font-size: 56px;
+      margin-bottom: 16px;
+      animation: wiggle 2s ease-in-out infinite;
+    }
+
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(-5deg); }
+      50%      { transform: rotate(5deg); }
+    }
+
+    .invite-card h1 {
+      color: #fff;
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1.3;
+      margin-bottom: 12px;
+      text-shadow: 0 2px 15px rgba(0,0,0,0.2);
+    }
+
+    .invite-card .invite-text {
+      color: rgba(255,255,255,0.92);
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .invite-card .invite-text em {
+      font-style: normal;
+      color: #ffe066;
+      font-weight: 800;
+    }
+
+    .btn-wrap {
+      position: relative;
+      display: inline-block;
+    }
+
+    .btn-go {
+      position: relative;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 44px;
+      border-radius: 50px;
+      border: none;
+      background: linear-gradient(135deg, #ffe066, #ffb347);
+      color: #5b2c8e;
+      font-family: 'Nunito', sans-serif;
+      font-size: 18px;
+      font-weight: 900;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 6px 30px rgba(255,179,71,0.45);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn-go:active {
+      transform: scale(0.93);
+      box-shadow: 0 3px 15px rgba(255,179,71,0.3);
+    }
+
+    .btn-go.accepted {
+      background: linear-gradient(135deg, #34c759, #30d158);
+      color: #fff;
+      pointer-events: none;
+    }
+
+    .btn-go svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    .btn-burst {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .burst-particle {
+      position: absolute;
+      border-radius: 50%;
+      animation: burstOut ease-out forwards;
+    }
+
+    @keyframes burstOut {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(var(--tx), var(--ty)) scale(0);
+        opacity: 0;
+      }
+    }
+
+    .accepted-text {
+      margin-top: 20px;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 800;
+      opacity: 0;
+      transform: translateY(15px);
+      transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .accepted-text.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* --- CONFETTI --- */
+    .confetti-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      top: -20px;
+      animation: confettiFall linear forwards;
+    }
+
+    @keyframes confettiFall {
+      0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* --- TOAST --- */
+    .toast {
+      position: fixed;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(255,255,255,0.95);
+      color: #5b2c8e;
+      padding: 16px 28px;
+      border-radius: 16px;
+      font-weight: 800;
+      font-size: 15px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+      z-index: 10000;
+      transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      text-align: center;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* --- MUTED BUTTON --- */
+    .mute-btn {
+      position: absolute;
+      top: calc(16px + var(--safe-top));
+      right: 16px;
+      z-index: 20;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(10px);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mute-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: #fff;
+    }
+
+    /* --- VIDEO PLACEHOLDER (if no video file) --- */
+    .video-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: rgba(255,255,255,0.7);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .video-placeholder svg {
+      width: 48px;
+      height: 48px;
+      fill: rgba(255,255,255,0.4);
+    }
+
+    .slide-video:nth-child(1) .video-placeholder { background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); }
+    .slide-video:nth-child(2) .video-placeholder { background: linear-gradient(135deg, #0f3460, #533483, #e94560); }
+    .slide-video:nth-child(3) .video-placeholder { background: linear-gradient(135deg, #e94560, #f38181, #fce38a); }
+
+    /* --- TAP TO PLAY overlay --- */
+    .tap-to-play {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .tap-to-play .play-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      border: 3px solid rgba(255,255,255,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: pulsePlay 2s ease infinite;
+    }
+
+    .tap-to-play .play-icon svg {
+      width: 36px;
+      height: 36px;
+      fill: #fff;
+      margin-left: 4px;
+    }
+
+    .tap-to-play p {
+      color: #fff;
+      font-weight: 800;
+      font-size: 18px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    @keyframes pulsePlay {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0.3); }
+      50%      { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(255,255,255,0); }
+    }
+
+    .tap-to-play.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TAP TO START OVERLAY -->
+  <div class="tap-to-play" id="tapOverlay">
+    <div class="play-icon">
+      <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+    </div>
+    <p>Нажми, чтобы начать</p>
+  </div>
+
+  <!-- PROGRESS DOTS -->
+  <div class="progress-dots" id="progressDots">
+    <div class="progress-dot active" data-index="0"></div>
+    <div class="progress-dot" data-index="1"></div>
+    <div class="progress-dot" data-index="2"></div>
+    <div class="progress-dot" data-index="3"></div>
+  </div>
+
+  <!-- MAIN FEED -->
+  <div class="feed" id="feed">
+
+    <!-- SLIDE 1 -->
+    <div class="slide slide-video" data-index="0">
+      <video src="videos/video1.mp4" playsinline loop preload="auto"></video>
+      <div class="video-overlay"></div>
+
+      <button class="mute-btn" id="muteBtn" aria-label="Mute/Unmute">
+        <svg id="muteIcon" viewBox="0 0 24 24" style="display:none"><path d="M16.5 12A4.5 4.5 0 0 0 14 8v8a4.47 4.47 0 0 0 2.5-4zM19 12c0 2.28-.94 4.34-2.45 5.82l1.42 1.42A9.96 9.96 0 0 0 21 12c0-3.07-1.38-5.82-3.56-7.65L16 5.76A7.97 7.97 0 0 1 19 12zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.51-1.42.93-2.25 1.19v2.06a8.9 8.9 0 0 0 3.69-1.81l2.04 2.04L21 20.73l-1-1V3zM12 4l-1.17 1.14L12 6.31z"/></svg>
+        <svg id="unmuteIcon" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.47 4.47 0 0 0 2.5-4zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+      </button>
+
+      <div class="side-actions">
+        <div class="side-action" onclick="toggleLike(this)">
+          <div class="icon-circle">
+            <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </div>
+          <span>Like</span>
+        </div>
+      </div>
+
+      <div class="video-caption">
+        <h2>Привет! 👋</h2>
+        <p>У меня есть кое-что интересное для тебя...</p>
+      </div>
+
+      <div class="scroll-hint" id="scrollHint">
+        <div class="arrows">
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <span>Листай вниз</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 2 -->
+    <div class="slide slide-video" data-index="1">
+      <video src="videos/video2.mp4" playsinline loop preload="auto"></video>
+      <div class="video-overlay"></div>
+
+      <div class="side-actions">
+        <div class="side-action" onclick="toggleLike(this)">
+          <div class="icon-circle">
+            <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </div>
+          <span>Like</span>
+        </div>
+      </div>
+
+      <div class="video-caption">
+        <h2>Смотри дальше! ✨</h2>
+        <p>Ещё чуть-чуть и узнаешь сюрприз</p>
+      </div>
+    </div>
+
+    <!-- SLIDE 3 -->
+    <div class="slide slide-video" data-index="2">
+      <video src="videos/video3.mp4" playsinline loop preload="auto"></video>
+      <div class="video-overlay"></div>
+
+      <div class="side-actions">
+        <div class="side-action" onclick="toggleLike(this)">
+          <div class="icon-circle">
+            <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </div>
+          <span>Like</span>
+        </div>
+      </div>
+
+      <div class="video-caption">
+        <h2>А теперь самое главное! 🎉</h2>
+        <p>Листай, чтобы узнать сюрприз →</p>
+      </div>
+    </div>
+
+    <!-- SLIDE 4 — INVITATION -->
+    <div class="slide slide-invite" data-index="3">
+      <div class="invite-bubbles" id="bubbles"></div>
+
+      <div class="invite-card">
+        <div class="invite-emoji-top">🌊🎢</div>
+        <h1>Я приглашаю тебя в&nbsp;самый большой крытый аквапарк Европы!</h1>
+        <p class="invite-text">
+          Тропические бассейны, захватывающие горки, расслабляющие сауны и&nbsp;<em>атмосфера настоящего лета</em> — всё это ждёт нас под одной крышей.<br><br>
+          Поехали вместе? 🚀
+        </p>
+
+        <div class="btn-wrap">
+          <div class="btn-burst" id="btnBurst"></div>
+          <button class="btn-go" id="goBtn" onclick="handleAccept()">
+            Принять приглашение
+            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+          </button>
+        </div>
+        <div class="accepted-text" id="acceptedText">Ураа! Будет весело! 🎉🌊</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- CONFETTI CONTAINER -->
+  <div class="confetti-container" id="confettiContainer"></div>
+
+  <script>
+    const feed = document.getElementById('feed');
+    const slides = document.querySelectorAll('.slide');
+    const videos = document.querySelectorAll('.slide-video video');
+    const dots = document.querySelectorAll('.progress-dot');
+    const scrollHint = document.getElementById('scrollHint');
+    const tapOverlay = document.getElementById('tapOverlay');
+    const muteBtn = document.getElementById('muteBtn');
+    const muteIcon = document.getElementById('muteIcon');
+    const unmuteIcon = document.getElementById('unmuteIcon');
+    let isMuted = false;
+    let currentSlide = 0;
+    let started = false;
+
+    function createBubbles() {
+      const container = document.getElementById('bubbles');
+      for (let i = 0; i < 20; i++) {
+        const b = document.createElement('div');
+        b.className = 'bubble';
+        const size = Math.random() * 60 + 20;
+        b.style.width = size + 'px';
+        b.style.height = size + 'px';
+        b.style.left = Math.random() * 100 + '%';
+        b.style.animationDuration = (Math.random() * 10 + 8) + 's';
+        b.style.animationDelay = (Math.random() * 10) + 's';
+        container.appendChild(b);
+      }
+    }
+    createBubbles();
+
+    tapOverlay.addEventListener('click', () => {
+      tapOverlay.classList.add('hidden');
+      started = true;
+      playCurrentVideo();
+    });
+
+    function playCurrentVideo() {
+      videos.forEach((v, i) => {
+        if (i === currentSlide) {
+          v.play().catch(() => {});
+        } else {
+          v.pause();
+          v.currentTime = 0;
+        }
+      });
+    }
+
+    function updateDots(index) {
+      dots.forEach((d, i) => {
+        d.classList.toggle('active', i === index);
+      });
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const idx = parseInt(entry.target.dataset.index);
+          currentSlide = idx;
+          updateDots(idx);
+
+          if (idx > 0 && scrollHint) {
+            scrollHint.classList.add('hidden');
+          }
+
+          if (started) {
+            playCurrentVideo();
+          }
+        }
+      });
+    }, {
+      root: feed,
+      threshold: 0.6
+    });
+
+    slides.forEach(s => observer.observe(s));
+
+    muteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      isMuted = !isMuted;
+      videos.forEach(v => { v.muted = isMuted; });
+      muteIcon.style.display = isMuted ? 'block' : 'none';
+      unmuteIcon.style.display = isMuted ? 'none' : 'block';
+    });
+
+    function toggleLike(el) {
+      const circle = el.querySelector('.icon-circle');
+      circle.classList.toggle('liked');
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('toast');
+      toast.textContent = text;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function spawnConfetti() {
+      const container = document.getElementById('confettiContainer');
+      const colors = ['#ff2d55', '#ffe066', '#5ac8fa', '#34c759', '#af52de', '#ff9f0a', '#ff375f'];
+      for (let i = 0; i < 80; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.width = (Math.random() * 8 + 5) + 'px';
+        piece.style.height = (Math.random() * 8 + 5) + 'px';
+        piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        piece.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+        piece.style.animationDelay = (Math.random() * 0.8) + 's';
+        container.appendChild(piece);
+      }
+      setTimeout(() => { container.innerHTML = ''; }, 4000);
+    }
+
+    function spawnBurst() {
+      const burst = document.getElementById('btnBurst');
+      burst.innerHTML = '';
+      const colors = ['#ff2d55', '#ffe066', '#5ac8fa', '#34c759', '#af52de', '#ff9f0a', '#ff375f', '#fff'];
+      for (let i = 0; i < 60; i++) {
+        const p = document.createElement('div');
+        p.className = 'burst-particle';
+        const angle = (Math.PI * 2 * i) / 60 + (Math.random() - 0.5) * 0.5;
+        const dist = Math.random() * 180 + 80;
+        const tx = Math.cos(angle) * dist;
+        const ty = Math.sin(angle) * dist;
+        p.style.setProperty('--tx', tx + 'px');
+        p.style.setProperty('--ty', ty + 'px');
+        const size = Math.random() * 10 + 5;
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        p.style.background = colors[Math.floor(Math.random() * colors.length)];
+        p.style.marginLeft = (-size / 2) + 'px';
+        p.style.marginTop = (-size / 2) + 'px';
+        p.style.animationDuration = (Math.random() * 0.6 + 0.5) + 's';
+        p.style.animationDelay = (Math.random() * 0.15) + 's';
+        p.style.borderRadius = Math.random() > 0.4 ? '50%' : '2px';
+        burst.appendChild(p);
+      }
+      setTimeout(() => { burst.innerHTML = ''; }, 1500);
+    }
+
+    function handleAccept() {
+      const btn = document.getElementById('goBtn');
+      if (btn.classList.contains('accepted')) return;
+
+      spawnBurst();
+
+      setTimeout(() => {
+        spawnConfetti();
+      }, 200);
+
+      btn.classList.add('accepted');
+      btn.innerHTML = 'Принято! <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor"/></svg>';
+
+      setTimeout(() => {
+        document.getElementById('acceptedText').classList.add('show');
+      }, 500);
+    }
+  </script>
+</body>
+</html>
