@@ -865,19 +865,16 @@
         hour: '2-digit', minute: '2-digit'
       });
 
-      const body = [
-        `Приглашение принято!`,
-        ``,
-        `Устройство: ${info.device}`,
-        `Браузер: ${info.browser}`,
-        `Экран: ${info.screen}`,
-        `Время: ${time}`
-      ].join('\n');
+      const msg = JSON.stringify({
+        topic: NTFY_TOPIC,
+        title: 'Приглашение в аквапарк принято! 🎉🌊',
+        message: `Устройство: ${info.device}\nБраузер: ${info.browser}\nЭкран: ${info.screen}\nВремя: ${time}`,
+        tags: ['tada', 'ocean']
+      });
 
-      fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
+      fetch('https://ntfy.sh/', {
         method: 'POST',
-        headers: { 'Title': 'Приглашение в аквапарк принято! 🎉🌊', 'Tags': 'tada,ocean' },
-        body: body
+        body: msg
       }).catch(() => {});
     }
 
