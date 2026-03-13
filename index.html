@@ -817,6 +817,70 @@
       setTimeout(() => { burst.innerHTML = ''; }, 1500);
     }
 
+    // ——— ЗАМЕНИ НА СВОЙ УНИКАЛЬНЫЙ ТОПИК ———
+    const NTFY_TOPIC = 'akwapark-invite-secret';
+
+    function getDeviceInfo() {
+      const ua = navigator.userAgent;
+      let device = 'Неизвестное устройство';
+
+      if (/iPhone/.test(ua)) {
+        device = 'iPhone';
+      } else if (/iPad/.test(ua)) {
+        device = 'iPad';
+      } else if (/Samsung/.test(ua)) {
+        const m = ua.match(/Samsung\s?([\w-]+)/i) || ua.match(/SM-[\w]+/);
+        device = m ? 'Samsung ' + m[0] : 'Samsung';
+      } else if (/Xiaomi|Redmi|POCO/.test(ua)) {
+        device = ua.match(/(Xiaomi|Redmi|POCO)[\s\w]*/i)?.[0] || 'Xiaomi';
+      } else if (/Huawei/i.test(ua)) {
+        device = 'Huawei';
+      } else if (/Pixel/.test(ua)) {
+        device = ua.match(/Pixel[\s\w]*/)?.[0] || 'Google Pixel';
+      } else if (/Android/.test(ua)) {
+        const m = ua.match(/;\s*([^;)]+)\s+Build/);
+        device = m ? m[1].trim() : 'Android устройство';
+      } else if (/Mac OS/.test(ua)) {
+        device = 'Mac';
+      } else if (/Windows/.test(ua)) {
+        device = 'Windows ПК';
+      } else if (/Linux/.test(ua)) {
+        device = 'Linux';
+      }
+
+      let browser = 'Браузер';
+      if (/CriOS|Chrome/.test(ua) && !/Edg/.test(ua)) browser = 'Chrome';
+      else if (/Safari/.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
+      else if (/Firefox|FxiOS/.test(ua)) browser = 'Firefox';
+      else if (/Edg/.test(ua)) browser = 'Edge';
+
+      return { device, browser, screen: `${screen.width}x${screen.height}` };
+    }
+
+    function sendNotification() {
+      const info = getDeviceInfo();
+      const now = new Date();
+      const time = now.toLocaleString('ru-RU', {
+        day: 'numeric', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+
+      const body = [
+        `Приглашение принято!`,
+        ``,
+        `Устройство: ${info.device}`,
+        `Браузер: ${info.browser}`,
+        `Экран: ${info.screen}`,
+        `Время: ${time}`
+      ].join('\n');
+
+      fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
+        method: 'POST',
+        headers: { 'Title': 'Приглашение в аквапарк принято! 🎉🌊', 'Tags': 'tada,ocean' },
+        body: body
+      }).catch(() => {});
+    }
+
     function handleAccept() {
       const btn = document.getElementById('goBtn');
       if (btn.classList.contains('accepted')) return;
@@ -833,6 +897,8 @@
       setTimeout(() => {
         document.getElementById('acceptedText').classList.add('show');
       }, 500);
+
+      sendNotification();
     }
   </script>
 </body>
